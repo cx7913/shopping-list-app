@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쇼핑 리스트</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient-1: #667eea;
+            --bg-gradient-2: #764ba2;
+            --container-bg: white;
+            --header-bg: #667eea;
+            --input-bg: white;
+            --input-border: #e0e0e0;
+            --input-text: #333;
+            --item-bg: #f8f9fa;
+            --item-bg-hover: #f0f1f3;
+            --item-checked-bg: #e8f5e9;
+            --item-text: #333;
+            --item-text-checked: #999;
+            --border-color: #eee;
+            --checkbox-border: #ddd;
+            --delete-btn-hover-bg: #ffebee;
+            --stats-bg: #f8f9fa;
+            --stats-text: #666;
+            --empty-text: #999;
+        }
+
+        body.dark-mode {
+            --bg-gradient-1: #1a1a2e;
+            --bg-gradient-2: #16213e;
+            --container-bg: #1e1e2e;
+            --header-bg: #2d2d44;
+            --input-bg: #2d2d44;
+            --input-border: #444;
+            --input-text: #eee;
+            --item-bg: #2d2d44;
+            --item-bg-hover: #3d3d54;
+            --item-checked-bg: #1e3a2f;
+            --item-text: #eee;
+            --item-text-checked: #888;
+            --border-color: #444;
+            --checkbox-border: #555;
+            --delete-btn-hover-bg: #3d2a2a;
+            --stats-bg: #252535;
+            --stats-text: #aaa;
+            --empty-text: #777;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        header {
+            background: var(--header-bg);
+            color: white;
+            padding: 24px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .input-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-section input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 8px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            transition: border-color 0.2s, background 0.3s;
+        }
+
+        .input-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-section button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .input-section button:hover {
+            background: #5a6fd6;
+        }
+
+        .list-section {
+            padding: 10px 20px 20px;
+            min-height: 200px;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: var(--empty-text);
+            padding: 40px 20px;
+            font-size: 16px;
+        }
+
+        .shopping-list {
+            list-style: none;
+        }
+
+        .shopping-item {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            background: var(--item-bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            cursor: grab;
+        }
+
+        .shopping-item:hover {
+            background: var(--item-bg-hover);
+        }
+
+        .shopping-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .shopping-item.drag-over {
+            border: 2px dashed #667eea;
+            background: var(--item-bg-hover);
+        }
+
+        .drag-handle {
+            color: #999;
+            margin-right: 10px;
+            cursor: grab;
+            font-size: 16px;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .shopping-item.checked {
+            background: var(--item-checked-bg);
+        }
+
+        .shopping-item.checked .item-text {
+            text-decoration: line-through;
+            color: var(--item-text-checked);
+        }
+
+        .checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--checkbox-border);
+            border-radius: 50%;
+            margin-right: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .checkbox:hover {
+            border-color: #667eea;
+        }
+
+        .shopping-item.checked .checkbox {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .checkbox::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .shopping-item.checked .checkbox::after {
+            opacity: 1;
+        }
+
+        .item-text {
+            flex: 1;
+            font-size: 16px;
+            color: var(--item-text);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .item-text:hover {
+            color: #667eea;
+        }
+
+        .edit-input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            font-size: 16px;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--input-text);
+        }
+
+        .delete-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background: var(--delete-btn-hover-bg);
+            color: #e53935;
+        }
+
+        .stats {
+            padding: 16px 20px;
+            background: var(--stats-bg);
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--stats-text);
+            transition: background 0.3s;
+        }
+
+        .clear-completed {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .clear-completed:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>쇼핑 리스트</h1>
+            <button class="theme-toggle" id="themeToggle" title="다크모드 전환">🌙</button>
+        </header>
+
+        <div class="input-section">
+            <input type="text" id="itemInput" placeholder="아이템을 입력하세요..." autofocus>
+            <button id="addBtn">추가</button>
+        </div>
+
+        <div class="list-section">
+            <ul class="shopping-list" id="shoppingList"></ul>
+            <div class="empty-message" id="emptyMessage">
+                리스트가 비어있습니다.<br>아이템을 추가해보세요!
+            </div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <span id="itemCount">0개 아이템</span>
+            <button class="clear-completed" id="clearCompleted">완료된 항목 삭제</button>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+
+        // DOM Elements
+        const itemInput = document.getElementById('itemInput');
+        const addBtn = document.getElementById('addBtn');
+        const shoppingList = document.getElementById('shoppingList');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const stats = document.getElementById('stats');
+        const itemCount = document.getElementById('itemCount');
+        const clearCompleted = document.getElementById('clearCompleted');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Dark mode functions
+        function applyTheme() {
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            applyTheme();
+        }
+
+        // Apply theme on load
+        applyTheme();
+
+        // Save to LocalStorage
+        function saveItems() {
+            localStorage.setItem('shoppingList', JSON.stringify(items));
+        }
+
+        // Render list
+        function render() {
+            shoppingList.innerHTML = '';
+
+            if (items.length === 0) {
+                emptyMessage.style.display = 'block';
+                stats.style.display = 'none';
+            } else {
+                emptyMessage.style.display = 'none';
+                stats.style.display = 'flex';
+
+                items.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.className = `shopping-item${item.checked ? ' checked' : ''}`;
+                    li.draggable = true;
+                    li.dataset.index = index;
+                    li.innerHTML = `
+                        <span class="drag-handle">☰</span>
+                        <div class="checkbox" data-index="${index}"></div>
+                        <span class="item-text" data-index="${index}" title="더블클릭하여 수정">${escapeHtml(item.text)}</span>
+                        <button class="delete-btn" data-index="${index}">&times;</button>
+                    `;
+                    shoppingList.appendChild(li);
+                });
+
+                const checkedCount = items.filter(item => item.checked).length;
+                const totalCount = items.length;
+                itemCount.textContent = `${totalCount}개 아이템 (${checkedCount}개 완료)`;
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Add item
+        function addItem() {
+            const text = itemInput.value.trim();
+            if (text === '') return;
+
+            items.push({ text, checked: false });
+            saveItems();
+            render();
+            itemInput.value = '';
+            itemInput.focus();
+        }
+
+        // Toggle check
+        function toggleCheck(index) {
+            items[index].checked = !items[index].checked;
+            saveItems();
+            render();
+        }
+
+        // Delete item
+        function deleteItem(index) {
+            items.splice(index, 1);
+            saveItems();
+            render();
+        }
+
+        // Clear completed items
+        function clearCompletedItems() {
+            items = items.filter(item => !item.checked);
+            saveItems();
+            render();
+        }
+
+        // Drag and Drop
+        let draggedIndex = null;
+
+        function handleDragStart(e) {
+            const li = e.target.closest('.shopping-item');
+            if (!li) return;
+            draggedIndex = parseInt(li.dataset.index);
+            li.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const li = e.target.closest('.shopping-item');
+            if (!li) return;
+            li.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            const li = e.target.closest('.shopping-item');
+            if (!li) return;
+            li.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const li = e.target.closest('.shopping-item');
+            if (!li) return;
+
+            const dropIndex = parseInt(li.dataset.index);
+            li.classList.remove('drag-over');
+
+            if (draggedIndex !== null && draggedIndex !== dropIndex) {
+                // Reorder items
+                const [draggedItem] = items.splice(draggedIndex, 1);
+                items.splice(dropIndex, 0, draggedItem);
+                saveItems();
+                render();
+            }
+        }
+
+        function handleDragEnd(e) {
+            const li = e.target.closest('.shopping-item');
+            if (li) li.classList.remove('dragging');
+            draggedIndex = null;
+            // Remove all drag-over classes
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        // Start editing item
+        function startEdit(index, element) {
+            const item = items[index];
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.value = item.text;
+            input.dataset.index = index;
+
+            element.replaceWith(input);
+            input.focus();
+            input.select();
+
+            // Save on Enter, cancel on Escape
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit(index, input.value);
+                } else if (e.key === 'Escape') {
+                    render();
+                }
+            });
+
+            // Save on blur
+            input.addEventListener('blur', () => {
+                saveEdit(index, input.value);
+            });
+        }
+
+        // Save edited item
+        function saveEdit(index, newText) {
+            const trimmed = newText.trim();
+            if (trimmed === '') {
+                deleteItem(index);
+            } else {
+                items[index].text = trimmed;
+                saveItems();
+                render();
+            }
+        }
+
+        // Event Listeners
+        addBtn.addEventListener('click', addItem);
+
+        itemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addItem();
+        });
+
+        shoppingList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('checkbox')) {
+                toggleCheck(parseInt(e.target.dataset.index));
+            } else if (e.target.classList.contains('delete-btn')) {
+                deleteItem(parseInt(e.target.dataset.index));
+            }
+        });
+
+        // Double click to edit
+        shoppingList.addEventListener('dblclick', (e) => {
+            if (e.target.classList.contains('item-text')) {
+                startEdit(parseInt(e.target.dataset.index), e.target);
+            }
+        });
+
+        // Drag and Drop events
+        shoppingList.addEventListener('dragstart', handleDragStart);
+        shoppingList.addEventListener('dragover', handleDragOver);
+        shoppingList.addEventListener('dragleave', handleDragLeave);
+        shoppingList.addEventListener('drop', handleDrop);
+        shoppingList.addEventListener('dragend', handleDragEnd);
+
+        clearCompleted.addEventListener('click', clearCompletedItems);
+
+        // Theme toggle
+        themeToggle.addEventListener('click', toggleTheme);
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+쇼핑 리스트 웹 애플리케이션 - Vanilla JavaScript로 구현된 할 일 관리 앱
+
+## 실행 방법
+
+```bash
+# 로컬 서버로 실행 (Google Fonts 로드를 위해 권장)
+npx serve .
+# 또는
+python3 -m http.server 8000
+
+# 접속: http://localhost:3000 또는 http://localhost:8000
+```
+
+## 주요 기능
+
+| 기능 | 설명 | 사용법 |
+|------|------|--------|
+| 아이템 추가 | 새 항목 추가 | 입력 후 Enter 또는 추가 버튼 |
+| 아이템 체크 | 완료 표시 | 원형 체크박스 클릭 |
+| 아이템 수정 | 텍스트 편집 | 항목 텍스트 더블클릭 |
+| 아이템 삭제 | 개별 삭제 | × 버튼 클릭 |
+| 순서 변경 | 드래그앤드롭 | ☰ 핸들 드래그 |
+| 일괄 삭제 | 완료 항목 삭제 | "완료된 항목 삭제" 클릭 |
+| 다크모드 | 테마 전환 | 헤더의 🌙/☀️ 버튼 |
+| 데이터 저장 | 자동 저장 | LocalStorage (새로고침 유지) |
+
+## 기술 스택
+
+- **HTML5** - 단일 파일 구조
+- **CSS3** - CSS 변수로 다크모드 구현
+- **Vanilla JavaScript** - 프레임워크 없음
+- **Google Fonts** - Noto Sans KR (한글 폰트)
+- **LocalStorage** - 클라이언트 데이터 저장
+
+## 프로젝트 구조
+
+```
+Study-06/
+├── index.html    # 메인 앱 (HTML + CSS + JS 통합)
+└── CLAUDE.md     # 프로젝트 문서
+```
+
+## 데이터 구조
+
+```javascript
+// LocalStorage 키: 'shoppingList'
+items = [
+  { text: "우유", checked: false },
+  { text: "계란", checked: true }
+]
+
+// LocalStorage 키: 'darkMode'
+isDarkMode = true | false
+```
+
+## Repository Context
+
+This folder is part of a study series:
+- Study-01: Handwritten digit recognition (Python/TensorFlow)
+- Study-04: OpenRouter API integration (recipe app)
+- Study-05: PDF summarization and AI diary
+- **Study-06: Shopping List App (Current)**
