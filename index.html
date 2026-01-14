@@ -343,7 +343,7 @@
         // Supabase Configuration
         const SUPABASE_URL = 'https://rglksgftjjtysndbehgq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnbGtzZ2Z0amp0eXNuZGJlaGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzk2MTEsImV4cCI6MjA4MzkxNTYxMX0.EQWQ30mzs1OAvFuU5H2Fec2rRqkcRR7QTF5TQZzIQDw';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // State
         let items = [];
@@ -381,7 +381,7 @@
 
         // Load items from Supabase
         async function loadItems() {
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('shopping_items')
                 .select('*')
                 .order('position', { ascending: true });
@@ -441,7 +441,7 @@
 
             const maxPosition = items.length > 0 ? Math.max(...items.map(i => i.position)) + 1 : 0;
 
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('shopping_items')
                 .insert([{ text, checked: false, position: maxPosition }])
                 .select();
@@ -462,7 +462,7 @@
             const item = items[index];
             const newChecked = !item.checked;
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('shopping_items')
                 .update({ checked: newChecked })
                 .eq('id', item.id);
@@ -480,7 +480,7 @@
         async function deleteItem(index) {
             const item = items[index];
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('shopping_items')
                 .delete()
                 .eq('id', item.id);
@@ -500,7 +500,7 @@
 
             if (completedIds.length === 0) return;
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('shopping_items')
                 .delete()
                 .in('id', completedIds);
@@ -523,7 +523,7 @@
                 position: index
             }));
 
-            const { error } = await supabase
+            const { error } = await db
                 .from('shopping_items')
                 .upsert(updates);
 
@@ -618,7 +618,7 @@
             } else {
                 const item = items[index];
 
-                const { error } = await supabase
+                const { error } = await db
                     .from('shopping_items')
                     .update({ text: trimmed })
                     .eq('id', item.id);
