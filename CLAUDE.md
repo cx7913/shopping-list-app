@@ -28,7 +28,7 @@ python3 -m http.server 8000
 | 순서 변경 | 드래그앤드롭 | ☰ 핸들 드래그 |
 | 일괄 삭제 | 완료 항목 삭제 | "완료된 항목 삭제" 클릭 |
 | 다크모드 | 테마 전환 | 헤더의 🌙/☀️ 버튼 |
-| 데이터 저장 | 자동 저장 | LocalStorage (새로고침 유지) |
+| 데이터 저장 | 클라우드 저장 | Supabase (실시간 동기화) |
 
 ## 기술 스택
 
@@ -36,7 +36,8 @@ python3 -m http.server 8000
 - **CSS3** - CSS 변수로 다크모드 구현
 - **Vanilla JavaScript** - 프레임워크 없음
 - **Google Fonts** - Noto Sans KR (한글 폰트)
-- **LocalStorage** - 클라이언트 데이터 저장
+- **Supabase** - 클라우드 데이터베이스 (PostgreSQL)
+- **LocalStorage** - 다크모드 설정 저장
 
 ## 프로젝트 구조
 
@@ -48,16 +49,27 @@ Study-06/
 
 ## 데이터 구조
 
-```javascript
-// LocalStorage 키: 'shoppingList'
-items = [
-  { text: "우유", checked: false },
-  { text: "계란", checked: true }
-]
+```sql
+-- Supabase 테이블: shopping_items
+CREATE TABLE shopping_items (
+    id SERIAL PRIMARY KEY,
+    text TEXT NOT NULL,
+    checked BOOLEAN DEFAULT FALSE,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
 
-// LocalStorage 키: 'darkMode'
+```javascript
+// LocalStorage 키: 'darkMode' (테마 설정만 로컬 저장)
 isDarkMode = true | false
 ```
+
+## Supabase 설정
+
+- **Project**: HonGongVibeCoding's Project
+- **Region**: ap-south-1
+- **Table**: shopping_items
 
 ## Repository Context
 

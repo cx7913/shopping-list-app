@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-gradient-1: #667eea;
@@ -339,8 +340,13 @@
     </div>
 
     <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://rglksgftjjtysndbehgq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnbGtzZ2Z0amp0eXNuZGJlaGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzk2MTEsImV4cCI6MjA4MzkxNTYxMX0.EQWQ30mzs1OAvFuU5H2Fec2rRqkcRR7QTF5TQZzIQDw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         // State
-        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+        let items = [];
         let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
         // DOM Elements
@@ -373,9 +379,20 @@
         // Apply theme on load
         applyTheme();
 
-        // Save to LocalStorage
-        function saveItems() {
-            localStorage.setItem('shoppingList', JSON.stringify(items));
+        // Load items from Supabase
+        async function loadItems() {
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .select('*')
+                .order('position', { ascending: true });
+
+            if (error) {
+                console.error('Error loading items:', error);
+                return;
+            }
+
+            items = data || [];
+            render();
         }
 
         // Render list
@@ -394,11 +411,12 @@
                     li.className = `shopping-item${item.checked ? ' checked' : ''}`;
                     li.draggable = true;
                     li.dataset.index = index;
+                    li.dataset.id = item.id;
                     li.innerHTML = `
                         <span class="drag-handle">☰</span>
-                        <div class="checkbox" data-index="${index}"></div>
-                        <span class="item-text" data-index="${index}" title="더블클릭하여 수정">${escapeHtml(item.text)}</span>
-                        <button class="delete-btn" data-index="${index}">&times;</button>
+                        <div class="checkbox" data-index="${index}" data-id="${item.id}"></div>
+                        <span class="item-text" data-index="${index}" data-id="${item.id}" title="더블클릭하여 수정">${escapeHtml(item.text)}</span>
+                        <button class="delete-btn" data-index="${index}" data-id="${item.id}">&times;</button>
                     `;
                     shoppingList.appendChild(li);
                 });
@@ -417,36 +435,101 @@
         }
 
         // Add item
-        function addItem() {
+        async function addItem() {
             const text = itemInput.value.trim();
             if (text === '') return;
 
-            items.push({ text, checked: false });
-            saveItems();
+            const maxPosition = items.length > 0 ? Math.max(...items.map(i => i.position)) + 1 : 0;
+
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .insert([{ text, checked: false, position: maxPosition }])
+                .select();
+
+            if (error) {
+                console.error('Error adding item:', error);
+                return;
+            }
+
+            items.push(data[0]);
             render();
             itemInput.value = '';
             itemInput.focus();
         }
 
         // Toggle check
-        function toggleCheck(index) {
-            items[index].checked = !items[index].checked;
-            saveItems();
+        async function toggleCheck(index) {
+            const item = items[index];
+            const newChecked = !item.checked;
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .update({ checked: newChecked })
+                .eq('id', item.id);
+
+            if (error) {
+                console.error('Error updating item:', error);
+                return;
+            }
+
+            items[index].checked = newChecked;
             render();
         }
 
         // Delete item
-        function deleteItem(index) {
+        async function deleteItem(index) {
+            const item = items[index];
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .eq('id', item.id);
+
+            if (error) {
+                console.error('Error deleting item:', error);
+                return;
+            }
+
             items.splice(index, 1);
-            saveItems();
             render();
         }
 
         // Clear completed items
-        function clearCompletedItems() {
+        async function clearCompletedItems() {
+            const completedIds = items.filter(item => item.checked).map(item => item.id);
+
+            if (completedIds.length === 0) return;
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .in('id', completedIds);
+
+            if (error) {
+                console.error('Error clearing completed items:', error);
+                return;
+            }
+
             items = items.filter(item => !item.checked);
-            saveItems();
             render();
+        }
+
+        // Update positions after reorder
+        async function updatePositions() {
+            const updates = items.map((item, index) => ({
+                id: item.id,
+                text: item.text,
+                checked: item.checked,
+                position: index
+            }));
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .upsert(updates);
+
+            if (error) {
+                console.error('Error updating positions:', error);
+            }
         }
 
         // Drag and Drop
@@ -473,7 +556,7 @@
             li.classList.remove('drag-over');
         }
 
-        function handleDrop(e) {
+        async function handleDrop(e) {
             e.preventDefault();
             const li = e.target.closest('.shopping-item');
             if (!li) return;
@@ -485,8 +568,8 @@
                 // Reorder items
                 const [draggedItem] = items.splice(draggedIndex, 1);
                 items.splice(dropIndex, 0, draggedItem);
-                saveItems();
                 render();
+                await updatePositions();
             }
         }
 
@@ -506,6 +589,7 @@
             input.className = 'edit-input';
             input.value = item.text;
             input.dataset.index = index;
+            input.dataset.id = item.id;
 
             element.replaceWith(input);
             input.focus();
@@ -527,13 +611,24 @@
         }
 
         // Save edited item
-        function saveEdit(index, newText) {
+        async function saveEdit(index, newText) {
             const trimmed = newText.trim();
             if (trimmed === '') {
-                deleteItem(index);
+                await deleteItem(index);
             } else {
+                const item = items[index];
+
+                const { error } = await supabase
+                    .from('shopping_items')
+                    .update({ text: trimmed })
+                    .eq('id', item.id);
+
+                if (error) {
+                    console.error('Error updating item:', error);
+                    return;
+                }
+
                 items[index].text = trimmed;
-                saveItems();
                 render();
             }
         }
@@ -572,8 +667,8 @@
         // Theme toggle
         themeToggle.addEventListener('click', toggleTheme);
 
-        // Initial render
-        render();
+        // Initial load from Supabase
+        loadItems();
     </script>
 </body>
 </html>
